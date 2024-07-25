@@ -1,26 +1,42 @@
 <template>
-    <div v-html="currentState.mathML"></div>
+    <div>
+        <component ref="$template" :is="currentTemplate" :parameters />
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { PropType, ref, onMounted, computed } from 'vue';
+import { OperationType, Operation2Component } from './formula-templates'
 
-const currentState = ref({
-    mathML: '<math><mrow><mn>1</mn><mo>+</mo><mn>2</mn></mrow></math>',
-    answer: null as null | number,
+const props = defineProps({
+    operation: {
+        type: String as PropType<OperationType>,
+        default: OperationType.plus,
+    },
+    parameterNum: {
+        type: Number,
+        default: 2,
+    }
 })
+const $template = ref(null as any);
+const parameters = ref([] as number[]);
+const answer = ref();
+
+const currentTemplate = computed(() => Operation2Component[props.operation]);
 
 const generateRandomFormula = () => {
-    const a = Math.floor(Math.random() * 10);
-    const b = Math.floor(Math.random() * 10);
-    const answer = a + b;
-    const mathML = `<math><mrow><mn>${a}</mn><mo>+</mo><mn>${b}</mn></mrow></math>`;
-    currentState.value.answer = answer;
-    currentState.value.mathML = mathML;
+    const newParameters = [] as number[];
+    for (let i = 0; i < props.parameterNum; i++) {
+        newParameters.push(Math.floor(Math.random() * 10))
+    }
+    parameters.value = newParameters;
+    answer.value = $template.value.evaluate(parameters.value)
 }
 
-generateRandomFormula();
+onMounted(() => {
+    generateRandomFormula()
+});
 
-defineExpose({generateRandomFormula, currentState})
+defineExpose({answer, generateRandomFormula})
 
 </script>
